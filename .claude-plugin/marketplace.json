@@ -1,0 +1,19 @@
+{
+  "name": "report-skills",
+  "owner": {
+    "name": "Raymond"
+  },
+  "metadata": {
+    "description": "中文深度报告技能集（编排器 + 四个卫星技能）",
+    "version": "1.2.0"
+  },
+  "plugins": [
+    {
+      "name": "report-skills",
+      "source": ".",
+      "description": "exec-deep-report 编排器与 product-slogan、material-factcheck、sales-qa-battlecard、cn-docx-report 四个卫星技能",
+      "version": "1.2.0",
+      "category": "productivity"
+    }
+  ]
+}

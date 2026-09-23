@@ -1,0 +1,21 @@
+# 变更记录
+
+## 1.2（2026-09-22）
+- 阶段 0 增加“范围与输出确认”：立项三问后用选项确认生成内容、调用模块与输出形式，默认全选即完整报告；立项单同步增加第 9 项。
+- 明确为编排器：description 里把口号、问答攻防、材料核查、排版四类单一需求分流给卫星技能。
+- 共用参考与脚本改由团队共用目录 `shared/` 同步（`shared.txt` 为清单），新增共用的 `references/caution-words.md`。
+
+## 1.1（2026-09-22）
+- 新增 `references/quality-rubric.md`：十项标尺、两道闸门的评分规则、结构指标（待基线校准）、金标准与回放做法。
+- 新增 `examples/`：虚构的「北极星」迷你报告作为文风锚点，可构建，也是 `structure_qa.py` 的测试样本；样例标记词会被 QA 拦截。
+- 新增 `assets/workspace/`：`work/` 六文件工作区约定，支持中断续写与跨宿主接力。
+- 新增 `scripts/build.js`：从 `report.json` 构建 Word，内容与渲染分离，同一 JSON 重复构建结果一致。
+- 新增 `scripts/structure_qa.py`：十条硬规则的结构检查（来源行、章内图表、问答条数、适配矩阵、攻防表、建议值标注、重要提示、占位符、执行摘要页数）。
+- 新增 `scripts/doctor.py`、`scripts/package.json`、`scripts/make_datasheet.py`：环境预检、依赖锁定、Excel 取数单兜底；用于 Claude 沙箱以外的宿主。
+- 修改：`chart_style.py` 中文字体按名称回退；`report_lib.js` 中文字体可用环境变量 `REPORT_CJK_FONT` 覆盖；`render_qa.py` 增加 Mac 的 LibreOffice 路径；`text_qa.py` 增加 pandoc 缺失提示与样例标记词。
+- 修改：SKILL.md 描述前置触发词（适配 Codex 截短）；阶段 0、4、5、6、7 接入工作区、标尺与新脚本；“系统自带技能”改为宿主中性的说法。
+- 校准：用一份 A 类金标准量出结构指标写入 rubric；`structure_qa.py` 的 F3 按金标准校准（含外部数据的表缺来源行为 FAIL，自编工具表为 WARN）。金标准本身不在包内。
+- 未改：八个阶段、十条团队默认约定、三种骨架、写作公式、证据纪律、`report_lib.js` 的版式对策。
+
+## 1.0（2026-09-21）
+- 首个团队版。

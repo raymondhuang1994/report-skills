@@ -1,0 +1,4 @@
+# sales-qa-battlecard 从 shared/ 同步的文件
+references/toolkit-templates.md
+references/evidence-discipline.md
+references/caution-words.md

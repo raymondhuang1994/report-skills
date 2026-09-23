@@ -1,0 +1,26 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install matplotlib pillow openpyxl python-pptx
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils pandoc fonts-noto-cjk
+      - run: cd shared/scripts && npm install
+      - run: NODE_PATH="$PWD/shared/scripts/node_modules" tools/selftest.sh
+      - run: python3 tools/package_skills.py --prompt-pack
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            dist/*.skill
+            dist/prompts/*.md

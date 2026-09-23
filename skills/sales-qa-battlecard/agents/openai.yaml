@@ -1,0 +1,4 @@
+interface:
+  display_name: "销售问答与攻防"
+  short_description: "问答不少于十条、攻防表两列齐、适配矩阵含不适合、一分钟话术；同业事实带查证日期"
+  default_prompt: "给销售团队做一套口径：客户会怎么问、怎么答，攻防表，谁不适合买。"

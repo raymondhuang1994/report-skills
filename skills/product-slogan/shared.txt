@@ -1,0 +1,3 @@
+# product-slogan 从 shared/ 同步的文件
+references/writing-formula.md
+references/caution-words.md
