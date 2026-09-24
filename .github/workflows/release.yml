@@ -14,9 +14,11 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install matplotlib pillow openpyxl python-pptx
-      - run: sudo apt-get update && sudo apt-get install -y poppler-utils pandoc fonts-noto-cjk
-      - run: cd shared/scripts && npm install
-      - run: NODE_PATH="$PWD/shared/scripts/node_modules" tools/selftest.sh
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils pandoc fonts-noto-cjk libreoffice-writer
+      - run: tools/install_codex.sh "$RUNNER_TEMP/report-skills-installed"
+      - run: tools/selftest.sh
+      - name: Verify checks did not modify source assets
+        run: git diff --exit-code
       - run: python3 tools/package_skills.py --prompt-pack
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')

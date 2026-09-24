@@ -3,7 +3,7 @@
 在 Claude 沙箱以外（本机、Codex、CI）首次使用前运行；全部 OK 后再构建报告。
 检查：node ≥ 18、docx 模块、Python 库、LibreOffice、poppler、pandoc、中文字体。缺什么给安装命令。
 退出码：必需项缺失为 1。"""
-import os, sys, shutil, subprocess, importlib, glob
+import os, sys, shutil, subprocess, importlib, glob, re, shlex
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SOFFICE = ["soffice", "/Applications/LibreOffice.app/Contents/MacOS/soffice", "/usr/bin/soffice", "/usr/local/bin/soffice"]
@@ -21,12 +21,12 @@ def run(cmd, **kw):
 
 # node 与 docx
 r = run(["node", "-v"]); ver = (r.stdout.strip() if r and r.returncode == 0 else "")
-add("node", bool(ver) and int(ver.lstrip("v").split(".")[0]) >= 18, ver, "安装 Node.js 18 以上：https://nodejs.org 或 brew install node")
+major = re.match(r"v?(\d+)", ver)
+add("node", bool(major) and int(major.group(1)) >= 18, ver, "安装 Node.js 18 以上：https://nodejs.org 或 brew install node")
 env = dict(os.environ)
-if "NODE_PATH" not in env:
-    g = run(["npm", "root", "-g"]); env["NODE_PATH"] = g.stdout.strip() if g and g.returncode == 0 else ""
-r = run(["node", "-e", "const p=require.resolve('docx');const v=JSON.parse(require('fs').readFileSync(require('path').join(p.split('node_modules')[0],'node_modules','docx','package.json'))).version;console.log(v)"], cwd=HERE, env=env)
-add("docx (npm)", bool(r) and r.returncode == 0, "docx " + (r.stdout.strip() if r else ""), "cd scripts && npm install（按 package.json 锁定版本），或 npm install -g docx 后用 NODE_PATH=$(npm root -g)")
+# 与 build.js 使用同一目录及当前环境；不偷偷添加只在预检时有效的全局 NODE_PATH。
+r = run(["node", "-e", "const fs=require('fs'),path=require('path');let d=path.dirname(require.resolve('docx'));for(;;){const p=path.join(d,'package.json');if(fs.existsSync(p)){const v=JSON.parse(fs.readFileSync(p,'utf8'));if(v.name==='docx'){console.log(v.version);break;}}const next=path.dirname(d);if(next===d)throw Error('docx package metadata not found');d=next;}"], cwd=HERE, env=env)
+add("docx (npm)", bool(r) and r.returncode == 0, "docx " + (r.stdout.strip() if r else ""), "在此技能安装依赖：npm install --prefix " + shlex.quote(HERE) + "（仓库用户可运行 tools/install_codex.sh）")
 
 # Python 库
 for mod, hint, req in [("matplotlib", "pip install matplotlib", True), ("PIL", "pip install pillow", True), ("openpyxl", "pip install openpyxl（生成 Excel 取数单用）", False)]:
@@ -35,7 +35,7 @@ for mod, hint, req in [("matplotlib", "pip install matplotlib", True), ("PIL", "
 
 # 外部工具
 add("LibreOffice (soffice)", any(shutil.which(c) or os.path.exists(c) for c in SOFFICE), next((c for c in SOFFICE if shutil.which(c) or os.path.exists(c)), ""), "brew install --cask libreoffice 或 apt install libreoffice；render_qa 转 PDF 需要")
-for tool, hint in [("pdftoppm", "brew install poppler 或 apt install poppler-utils；render_qa 出缩略图需要"), ("pdftotext", "同上（poppler）；structure_qa --pdf 需要"), ("pandoc", "brew install pandoc 或 apt install pandoc；text_qa 需要")]:
+for tool, hint in [("pdftoppm", "brew install poppler 或 apt install poppler-utils；render_qa 出缩略图需要"), ("pdftotext", "同上（poppler）；structure_qa --pdf 需要"), ("pdfinfo", "同上（poppler）；structure_qa --pdf 需要"), ("pandoc", "brew install pandoc 或 apt install pandoc；text_qa 需要")]:
     add(tool, bool(shutil.which(tool)), shutil.which(tool) or "", hint)
 
 # 中文字体

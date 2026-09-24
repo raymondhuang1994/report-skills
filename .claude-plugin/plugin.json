@@ -1,6 +1,6 @@
 {
   "name": "report-skills",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "中文深度报告技能集：exec-deep-report 编排器 + product-slogan、material-factcheck、sales-qa-battlecard、cn-docx-report 四个卫星技能。面向基金与 ETF 的产品分析、营销与研究报告。",
   "author": {
     "name": "Raymond"

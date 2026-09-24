@@ -1,4 +1,4 @@
 interface:
   display_name: "产品定位与口号"
-  short_description: "先定位后口号：事实库、六角度候选池、七维评分、简繁英三版、熊市与撞车测试，一页纸交付"
-  default_prompt: "根据附件产品资料想几个 slogan。受众是香港零售客户，渠道是券商 App 和路演，简繁英都要。"
+  short_description: "先比较不同叙事方向，确认后精修多条口号；保留喜欢的原句，证据与创意一起检查"
+  default_prompt: "用 $product-slogan 根据附件提出三个不同叙事方向和代表句，说明取舍，等我选定后再精修。"

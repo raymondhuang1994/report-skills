@@ -1,25 +1,44 @@
 #!/usr/bin/env bash
-# 自检：共享同步、frontmatter、渲染可重复、结构检查能抓缺陷。用法：tools/selftest.sh（CI 与本机通用；没有 LibreOffice 时跳过版式渲染）
-set -e
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"; S="$ROOT/shared"; T="$(mktemp -d)"
-export NODE_PATH="${NODE_PATH:-$(npm root -g 2>/dev/null || true)}"
-echo "[1] 共享同步与 frontmatter";  python3 "$ROOT/tools/package_skills.py" --check
-echo "[2] 环境预检";                 python3 "$S/scripts/doctor.py" || echo "    （有缺失项，以下步骤可能跳过）"
-echo "[3] 样例图";                   (cd "$S/examples" && python3 make_figures.py >/dev/null)
-echo "[4] 构建两次并比较 word/*.xml"
-node "$S/scripts/build.js" "$S/examples/polaris-mini.json" "$T/a.docx" >/dev/null && node "$S/scripts/build.js" "$S/examples/polaris-mini.json" "$T/b.docx" >/dev/null
-mkdir -p "$T/a" "$T/b" && unzip -qo "$T/a.docx" -d "$T/a" && unzip -qo "$T/b.docx" -d "$T/b" && diff -rq "$T/a/word" "$T/b/word" && echo "    一致"
-echo "[5] 结构检查：样例应 0 FAIL";   python3 "$S/scripts/structure_qa.py" "$S/examples/polaris-mini.json" --example | tail -1
-echo "[6] 结构检查：植入缺陷应报 FAIL"
-python3 - "$S/examples/polaris-mini.json" "$T/bad.json" <<'PY'
-import json,sys; s=json.load(open(sys.argv[1],encoding='utf-8')); c=s['content']
-qa=next(x for x in c if x[0]=='t' and any('怎么问' in h for h in x[1]['head'])); qa[1]['rows']=qa[1]['rows'][:8]
-fig=next(x for x in c if x[0]=='f'); fig[1]['src']=''
-json.dump(s,open(sys.argv[2],'w',encoding='utf-8'),ensure_ascii=False)
-PY
-if python3 "$S/scripts/structure_qa.py" "$T/bad.json" --example >/dev/null; then echo "    错误：植入缺陷未被发现"; exit 1; else echo "    已发现（预期）"; fi
-if command -v soffice >/dev/null || [ -x /Applications/LibreOffice.app/Contents/MacOS/soffice ]; then
-  echo "[7] 版式渲染";  python3 "$S/scripts/render_qa.py" "$T/a.docx" "$T/render" | tail -2
-  out="$(python3 "$S/scripts/structure_qa.py" "$S/examples/polaris-mini.json" --example --pdf "$T/render/in.pdf")"; echo "$out" | grep "执行摘要"
-else echo "[7] 版式渲染：无 LibreOffice，跳过"; fi
-echo "自检完成"
+# 所有生成文件均在唯一临时目录。任何必需依赖或检查失败立即退出；版式不再静默跳过。
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+S="$ROOT/shared"
+T="$(mktemp -d)"
+export PYTHONDONTWRITEBYTECODE=1
+echo "自检工作目录：${T}（保留结果供排查）"
+echo "[1] 共享同步与 frontmatter"
+python3 "$ROOT/tools/package_skills.py" --check
+echo "[2] 环境预检"
+env -u NODE_PATH python3 "$S/scripts/doctor.py"
+echo "[3] 工程回归测试"
+python3 -m unittest discover -s "$ROOT/tools" -p 'test_*.py' -v
+echo "[4] 在临时目录生成样例图"
+mkdir -p "$T/examples" "$T/scripts"
+cp "$S/examples/polaris-mini.json" "$S/examples/make_figures.py" "$T/examples/"
+cp "$S/scripts/chart_style.py" "$T/scripts/"
+python3 "$T/examples/make_figures.py"
+echo "[5] 构建两次并比较 word/*.xml"
+env -u NODE_PATH node "$S/scripts/build.js" "$T/examples/polaris-mini.json" "$T/a.docx"
+env -u NODE_PATH node "$S/scripts/build.js" "$T/examples/polaris-mini.json" "$T/b.docx"
+mkdir -p "$T/a" "$T/b"
+unzip -qo "$T/a.docx" -d "$T/a"
+unzip -qo "$T/b.docx" -d "$T/b"
+diff -rq "$T/a/word" "$T/b/word"
+echo "同一输入两次构建一致"
+echo "[6] 验证真实技能入口的本地依赖与构建"
+for scripts in "$ROOT"/skills/*/scripts; do
+  if [ -f "$scripts/package.json" ]; then
+    skill="$(basename "$(dirname "$scripts")")"
+    env -u NODE_PATH node "$scripts/build.js" "$T/examples/polaris-mini.json" "$T/$skill.docx"
+  fi
+done
+echo "[7] 结构与文字检查"
+python3 "$S/scripts/structure_qa.py" "$T/examples/polaris-mini.json" --example | tail -1
+python3 "$S/scripts/text_qa.py" "$T/a.docx" --example
+echo "[8] 版式渲染与摘要页数实测"
+python3 "$S/scripts/render_qa.py" "$T/a.docx" "$T/render" | tee "$T/render.log"
+PDF="$(sed -n 's/^pdf: //p' "$T/render.log")"
+if [ -z "$PDF" ] || [ ! -f "$PDF" ]; then echo "未生成 PDF，检查失败" >&2; exit 1; fi
+python3 "$S/scripts/structure_qa.py" "$T/examples/polaris-mini.json" --example --pdf "$PDF"
+python3 "$ROOT/tools/sync_shared.py" --check
+echo "自动自检完成。生成目录：${T}；渲染图仍须逐页目视检查，不代表内容或合规已审核。"

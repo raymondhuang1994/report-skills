@@ -4,6 +4,9 @@ references/toolkit-templates.md
 references/evidence-discipline.md
 references/docx-pitfalls.md
 references/caution-words.md
+references/direction-confirmation.md
+references/persuasion-workflow.md
+references/report-json.md
 scripts/report_lib.js
 scripts/build.js
 scripts/build_template.js

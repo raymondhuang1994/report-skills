@@ -2,3 +2,5 @@
 references/toolkit-templates.md
 references/evidence-discipline.md
 references/caution-words.md
+references/direction-confirmation.md
+references/persuasion-workflow.md
